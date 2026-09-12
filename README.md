@@ -156,3 +156,32 @@ that needs TVL to the block reads the contract; anything charting history reads 
 
 Exact to the wei, which is the point of reconciling against a call rather than against a
 screenshot.
+
+### The same code, two protocols it has never heard of
+
+`erc-4626-vault-base` is the genericity proof. Same mappings, same schema, same ABI; only
+`config/base.json` differs. It indexes two MetaMorpho vaults belonging to a protocol this
+repository has no knowledge of, and picks up their names, symbols, assets and decimals from the
+chain.
+
+| Vault                  | Asset        | Share decimals | Share price     |
+| ---------------------- | ------------ | -------------- | --------------- |
+| Moonwell Flagship USDC | USDC, 6 dec  | 18             | `1.0876514274…` |
+| Moonwell Flagship ETH  | WETH, 18 dec | 18             | `1.0323843161…` |
+
+The two rows are the point. One vault offsets its share decimals by twelve and the other does not
+offset at all, and the same expression prices both. A share price that divided the raw integers
+would read the second correctly and the first as roughly `1.09e-12`.
+
+Reconciled against Base mainnet at each vault's own `lastUpdatedBlock`:
+
+| Vault                         | Field         | Subgraph                    | Chain                       |
+| ----------------------------- | ------------- | --------------------------- | --------------------------- |
+| Flagship ETH, block 51217819  | `totalAssets` | `1640060354038959741139`    | `1640060354038959741139`    |
+| Flagship ETH                  | `totalSupply` | `1588614170424451743124`    | `1588614170424451743124`    |
+| Flagship USDC, block 51217210 | `totalAssets` | `4616182329925`             | `4616182329925`             |
+| Flagship USDC                 | `totalSupply` | `4244174386474554881097832` | `4244174386474554881097832` |
+
+Supplies match at chain head too; assets do not, because a Morpho vault accrues interest
+continuously and emits nothing while doing it. That is the same staleness documented above, showing
+up on someone else's protocol.
