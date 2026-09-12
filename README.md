@@ -61,11 +61,17 @@ Run from the repository root. Both workspaces are covered.
 
 ```bash
 npm install
-npm run codegen        # generate AssemblyScript types from the ABIs and the schema
-npm run build          # compile to wasm, resolving addresses through networks.json
+npm run codegen        # render the manifest, then generate types from the ABIs and the schema
+npm run check:handlers # every exported handler is wired in the manifest, and vice versa
+npm run build          # compile to wasm
 npm run test           # matchstick unit tests
-npm run check          # format check, codegen, build and test, in that order
+npm run check          # all of the above, in order
 ```
+
+`check:handlers` exists because a handler that is exported but never wired fails silently: it
+compiles, it deploys, and the subgraph indexes with `hasIndexingErrors: false` while never seeing
+the event. Cope Market's `PositionClosed` shipped that way once and reported five open positions
+when the chain had already burned two of them.
 
 Per workspace, add `-w erc4626-vault` or `-w cope-market`.
 
@@ -137,3 +143,16 @@ between. Measured against the live deployment:
 The 16,928 is trading P&L that accrued into the pool without the vault emitting anything. Handlers
 run on logs, so a subgraph cannot see it until the next deposit, withdrawal or transfer. Anything
 that needs TVL to the block reads the contract; anything charting history reads the snapshots.
+
+### Verified against the chain
+
+`cope-market-arc`, reconciled at block 61745932:
+
+| Check                                    | Subgraph              | Chain                                               |
+| ---------------------------------------- | --------------------- | --------------------------------------------------- |
+| Open positions                           | 3                     | `ownerOf` succeeds for 3, 4, 5 and reverts for 1, 2 |
+| Closed positions                         | 2                     | two `PositionClosed` logs, at 61721020 and 61735230 |
+| Open notional, `sum(units x entryPrice)` | `5993999999999990531` | `openInterest(BTC, true)` = `5993999999999990531`   |
+
+Exact to the wei, which is the point of reconciling against a call rather than against a
+screenshot.

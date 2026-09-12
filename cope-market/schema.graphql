@@ -1,10 +1,148 @@
-# Scaffold schema. Workstream step 5.7 replaces this with positions, copies and realised P&L.
+# Cope Market's own data: positions, the copy graph, author fees and realised P&L.
+#
+# Deliberately separate from the erc4626-vault subgraph. Mixing any of this into a schema that
+# claims to describe any ERC-4626 vault would make that claim false.
+#
+# Units, because two of them are in play and mixing them silently is the easy mistake:
+#   - collateral, payout and fees are USDC, 6 decimals
+#   - prices and P&L are WAD, 18 decimals, in USD
 
-type Position @entity(immutable: false) {
-  "The ERC-721 token id, as bytes."
+enum PositionStatus {
+  OPEN
+  CLOSED
+  LIQUIDATED
+}
+
+type Protocol @entity(immutable: false) {
+  "The SyntheticVault address."
   id: Bytes!
-  "The Pyth feed the position is priced against."
-  feedId: Bytes!
-  "True for a long, false for a short."
+  positionCount: Int!
+  openPositionCount: Int!
+  closedCount: Int!
+  liquidatedCount: Int!
+  "Positions opened as a copy of another position."
+  copyCount: Int!
+  "Collateral ever committed, in USDC. Never decreases."
+  cumulativeCollateral: BigInt!
+  "Sum of realised P&L over every closed position, in WAD. Signed."
+  realizedPnlWad: BigInt!
+  "Author fees ever paid out, in USDC."
+  cumulativeAuthorFees: BigInt!
+}
+
+"One Pyth feed. The id is the feed id, not a ticker: the same asset has different ids per venue."
+type Asset @entity(immutable: false) {
+  id: Bytes!
+  positionCount: Int!
+  openPositionCount: Int!
+  longCount: Int!
+  shortCount: Int!
+  cumulativeCollateral: BigInt!
+  realizedPnlWad: BigInt!
+  positions: [Position!]! @derivedFrom(field: "asset")
+}
+
+"""
+An address that has opened, held or authored a position.
+
+`realizedPnlWad`, `wins` and `losses` are the leaderboard's inputs. They count only closed
+positions: an open position's P&L is a mark, not a result, and it moves every time the oracle does.
+"""
+type Trader @entity(immutable: false) {
+  id: Bytes!
+
+  positionsOpened: Int!
+  positionsClosed: Int!
+  "Positions of this trader's that were liquidated."
+  positionsLiquidated: Int!
+
+  "Positions of other people's that this trader liquidated."
+  liquidationsPerformed: Int!
+  "Liquidation rewards earned, in USDC."
+  liquidationRewardsEarned: BigInt!
+
+  "Signed sum of realised P&L over this trader's closed positions, in WAD."
+  realizedPnlWad: BigInt!
+  "Closed positions that realised more than zero."
+  wins: Int!
+  "Closed positions that realised zero or less. A flat close counts as a loss, not a win."
+  losses: Int!
+
+  "Collateral this trader has ever committed, in USDC."
+  cumulativeCollateral: BigInt!
+
+  "Positions this trader opened as a copy of someone else's."
+  copiesMade: Int!
+  "Times someone copied a position this trader authored."
+  copiesReceived: Int!
+  "Author fees earned from other people's copies, in USDC."
+  authorFeesEarned: BigInt!
+
+  authored: [Position!]! @derivedFrom(field: "author")
+  held: [Position!]! @derivedFrom(field: "owner")
+}
+
+"""
+One position NFT. The id is the token id as 32-byte big-endian, so `orderBy: id` is mint order.
+
+`author` is who opened it and never changes. `owner` is who holds the NFT now, which can differ:
+the position is transferable, and selling it moves the payout without moving the credit.
+"""
+type Position @entity(immutable: false) {
+  id: Bytes!
+  tokenId: BigInt!
+
+  asset: Asset!
+  author: Trader!
+  owner: Trader!
+
   isLong: Boolean!
+  "Collateral in USDC, net of the open fee — what the contract stored, not what was sent."
+  collateral: BigInt!
+  units: BigInt!
+  "Entry price in WAD, already skewed by the oracle's confidence interval."
+  entryPrice: BigInt!
+
+  openedAt: BigInt!
+  openedBlock: BigInt!
+  openedTx: Bytes!
+
+  "The position this one copied, if any."
+  copiedFrom: Position
+  "Positions that copied this one."
+  copies: [Position!]! @derivedFrom(field: "copiedFrom")
+  copyCount: Int!
+
+  status: PositionStatus!
+
+  "Exit price in WAD. Null while the position is open."
+  exitPrice: BigInt
+  "Realised P&L in WAD, signed. Null while the position is open."
+  realizedPnlWad: BigInt
+  "What the closer received in USDC, net of the author fee."
+  payout: BigInt
+  "The author fee this close paid out, in USDC. Null when it paid none."
+  authorFeePaid: BigInt
+  "The liquidator's reward in USDC. Null unless the position was liquidated."
+  liquidationReward: BigInt
+  closedAt: BigInt
+  closedBlock: BigInt
+  "Who sent the closing transaction. The liquidator, when it was liquidated."
+  closedBy: Bytes
+}
+
+"An author fee paid out on a copy's close. The id is the transaction hash plus the log index."
+type AuthorFee @entity(immutable: true) {
+  id: Bytes!
+  hash: Bytes!
+  logIndex: Int!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+
+  "The copy whose close paid the fee."
+  position: Position!
+  "The author of the position that was copied."
+  author: Trader!
+  "In USDC."
+  amount: BigInt!
 }

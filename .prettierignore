@@ -5,3 +5,4 @@ package-lock.json
 tests/.latest.json
 erc4626-vault/subgraph.yaml
 erc4626-vault/src/bindings.ts
+**/subgraph.yaml

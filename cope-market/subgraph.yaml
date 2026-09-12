@@ -1,5 +1,5 @@
 specVersion: 1.3.0
-description: Cope Market positions, copy lineage and realised P&L.
+description: Cope Market positions, copy lineage, author fees and realised P&L.
 repository: https://github.com/cope-market/subgraphs
 schema:
   file: ./schema.graphql
@@ -17,7 +17,11 @@ dataSources:
       language: wasm/assemblyscript
       file: ./src/synthetic-vault.ts
       entities:
+        - Asset
+        - AuthorFee
         - Position
+        - Protocol
+        - Trader
       abis:
         - name: SyntheticVault
           file: ./abis/SyntheticVault.json
@@ -25,3 +29,13 @@ dataSources:
         - event: PositionOpened(indexed uint256,indexed address,indexed
             bytes32,bool,uint128,uint256,uint256,uint256)
           handler: handlePositionOpened
+        - event: PositionClosed(indexed uint256,indexed address,indexed
+            bytes32,uint256,int256,uint256)
+          handler: handlePositionClosed
+        - event: PositionLiquidated(indexed uint256,indexed address,indexed
+            bytes32,uint256,int256,uint256,uint256)
+          handler: handlePositionLiquidated
+        - event: AuthorFeePaid(indexed uint256,indexed address,uint256)
+          handler: handleAuthorFeePaid
+        - event: Transfer(indexed address,indexed address,indexed uint256)
+          handler: handleTransfer
