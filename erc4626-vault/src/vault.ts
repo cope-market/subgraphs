@@ -4,7 +4,7 @@ import {
   Transfer,
   Withdraw as WithdrawEvent,
 } from "../generated/Vault/ERC4626";
-import {Deposit, Token, Vault, Withdraw} from "../generated/schema";
+import {Deposit, ShareTransfer, Token, Vault, Withdraw} from "../generated/schema";
 import {BIGINT_ZERO, DEFAULT_DECIMALS, ZERO_ADDRESS} from "./constants";
 import {sharePriceOf} from "./decimals";
 import {
@@ -14,8 +14,7 @@ import {
   getOrCreateVault,
   refreshVault,
 } from "./entities";
-
-// Step 5.4 adds the ShareTransfer entity, secondary-transfer tracking and the snapshots.
+import {updateSnapshots} from "./snapshots";
 
 /// Event ids are the transaction hash followed by the log index. Two deposits in one transaction
 /// are ordinary — a router, or a multicall — so the hash alone does not identify a log.
@@ -66,6 +65,7 @@ export function handleDeposit(event: DepositEvent): void {
   vault.save();
 
   refreshVault(vault, event.block);
+  updateSnapshots(vault, event.block, event.params.assets, BIGINT_ZERO, 1, 0);
 }
 
 export function handleWithdraw(event: WithdrawEvent): void {
@@ -108,6 +108,7 @@ export function handleWithdraw(event: WithdrawEvent): void {
   vault.save();
 
   refreshVault(vault, event.block);
+  updateSnapshots(vault, event.block, BIGINT_ZERO, event.params.assets, 0, 1);
 }
 
 /// Share balances are maintained here and nowhere else.
@@ -123,17 +124,50 @@ export function handleTransfer(event: Transfer): void {
   const isMint = event.params.from.equals(ZERO_ADDRESS);
   const isBurn = event.params.to.equals(ZERO_ADDRESS);
 
+  const from = getOrCreateAccount(event.params.from);
+  const to = getOrCreateAccount(event.params.to);
+
+  const transfer = new ShareTransfer(eventId(event));
+  transfer.hash = event.transaction.hash;
+  transfer.logIndex = event.logIndex.toI32();
+  transfer.blockNumber = event.block.number;
+  transfer.timestamp = event.block.timestamp;
+  transfer.vault = vault.id;
+  transfer.from = from.id;
+  transfer.to = to.id;
+  transfer.shares = shares;
+  transfer.isMint = isMint;
+  transfer.isBurn = isBurn;
+  transfer.save();
+
+  // A mint or a burn is the share half of a deposit or a withdrawal. Only movement between two
+  // real holders is a transfer in the sense anyone means when they ask how often shares changed
+  // hands, so that is what the counters and the per-position totals record.
+  const isSecondary = !isMint && !isBurn;
+
   if (!isMint) {
-    const from = getOrCreateAccount(event.params.from);
     const position = getOrCreatePosition(vault, from, event.block);
+    if (isSecondary) {
+      position.sharesSent = position.sharesSent.plus(shares);
+      position.save();
+    }
     applyShareDelta(vault, position, BIGINT_ZERO.minus(shares), event.block);
   }
 
   if (!isBurn) {
-    const to = getOrCreateAccount(event.params.to);
     const position = getOrCreatePosition(vault, to, event.block);
+    if (isSecondary) {
+      position.sharesReceived = position.sharesReceived.plus(shares);
+      position.save();
+    }
     applyShareDelta(vault, position, shares, event.block);
   }
 
+  if (isSecondary) {
+    vault.shareTransferCount = vault.shareTransferCount + 1;
+    vault.save();
+  }
+
   refreshVault(vault, event.block);
+  updateSnapshots(vault, event.block, BIGINT_ZERO, BIGINT_ZERO, 0, 0);
 }

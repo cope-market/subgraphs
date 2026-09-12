@@ -57,6 +57,16 @@ export function mockSilentVault(): void {
   createMockedFunction(ZERO, "decimals", "decimals():(uint8)").reverts();
 }
 
+/// Matchstick stamps every mock event with the same transaction hash and log index. Event ids are
+/// the hash followed by the log index, so without this every event in a test would overwrite the
+/// last one and a suite could never see two of anything.
+let logIndexCounter = 0;
+
+function nextLogIndex(): BigInt {
+  logIndexCounter += 1;
+  return BigInt.fromI32(logIndexCounter);
+}
+
 export function depositEvent(
   sender: Address,
   owner: Address,
@@ -65,6 +75,7 @@ export function depositEvent(
 ): Deposit {
   const event = changetype<Deposit>(newMockEvent());
   event.address = VAULT;
+  event.logIndex = nextLogIndex();
   event.parameters = [
     new ethereum.EventParam("sender", ethereum.Value.fromAddress(sender)),
     new ethereum.EventParam("owner", ethereum.Value.fromAddress(owner)),
@@ -83,6 +94,7 @@ export function withdrawEvent(
 ): Withdraw {
   const event = changetype<Withdraw>(newMockEvent());
   event.address = VAULT;
+  event.logIndex = nextLogIndex();
   event.parameters = [
     new ethereum.EventParam("sender", ethereum.Value.fromAddress(sender)),
     new ethereum.EventParam("receiver", ethereum.Value.fromAddress(receiver)),
@@ -96,6 +108,7 @@ export function withdrawEvent(
 export function transferEvent(from: Address, to: Address, shares: BigInt): Transfer {
   const event = changetype<Transfer>(newMockEvent());
   event.address = VAULT;
+  event.logIndex = nextLogIndex();
   event.parameters = [
     new ethereum.EventParam("from", ethereum.Value.fromAddress(from)),
     new ethereum.EventParam("to", ethereum.Value.fromAddress(to)),
@@ -112,4 +125,12 @@ export function pow10(decimals: i32): BigInt {
     result = result.times(ten);
   }
   return result;
+}
+
+/// Matchstick's mock block is the same for every event it builds, so any test about snapshot
+/// windows has to place the event on the timeline itself.
+export function atTime<T extends ethereum.Event>(event: T, timestamp: i64, blockNumber: i64): T {
+  event.block.timestamp = BigInt.fromI64(timestamp);
+  event.block.number = BigInt.fromI64(blockNumber);
+  return event;
 }
