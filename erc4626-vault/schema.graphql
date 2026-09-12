@@ -1,8 +1,208 @@
-# Scaffold schema. Workstream step 5.2 replaces this with the standardized entity set.
+# A standardized schema for any ERC-4626 tokenized vault.
+#
+# Nothing in this file may be specific to one vault, one protocol or one chain. Every field is
+# derivable from the four things ERC-4626 guarantees: the `Deposit` and `Withdraw` events, the
+# ERC-20 `Transfer` on the share token, and the `asset()`, `totalAssets()` and `totalSupply()`
+# views. If a field would not make sense on a Yearn or a Morpho vault, it does not belong here.
+#
+# Naming follows Messari's vault conventions where they apply. The one deliberate departure is
+# USD denomination: Messari's vault schema carries `totalValueLockedUSD` and friends, which need a
+# price oracle per asset. A schema that must resolve prices is no longer portable to an arbitrary
+# vault on an arbitrary chain, so amounts stay in their own token's units and `sharePrice` is
+# expressed in assets per share. Anything that wants USD multiplies by its own asset price.
+
+type Token @entity(immutable: true) {
+  "The token's address."
+  id: Bytes!
+  name: String!
+  symbol: String!
+  decimals: Int!
+}
 
 type Vault @entity(immutable: false) {
   "The vault's address."
   id: Bytes!
-  "The ERC-20 the vault accounts in, as reported by `asset()`."
-  asset: Bytes!
+
+  "The share token's own ERC-20 metadata. ERC-4626 vaults are themselves ERC-20s."
+  name: String!
+  symbol: String!
+  "Share decimals. Need not match the asset's: a vault may offset them to blunt inflation attacks."
+  decimals: Int!
+
+  "The ERC-20 the vault accounts in, from `asset()`."
+  asset: Token!
+
+  "`totalAssets()`, in asset units."
+  totalAssets: BigInt!
+  "`totalSupply()` of shares, in share units."
+  totalShares: BigInt!
+  "Assets per share, decimal-adjusted on both sides. One when the vault is empty."
+  sharePrice: BigDecimal!
+
+  "Assets ever deposited, in asset units. Never decreases."
+  cumulativeDepositedAssets: BigInt!
+  "Assets ever withdrawn, in asset units. Never decreases."
+  cumulativeWithdrawnAssets: BigInt!
+
+  depositCount: Int!
+  withdrawCount: Int!
+  "Share transfers that were neither a mint nor a burn."
+  shareTransferCount: Int!
+
+  "Accounts that have ever held shares."
+  cumulativeAccountCount: Int!
+  "Accounts holding a non-zero share balance right now."
+  openPositionCount: Int!
+
+  firstSeenBlock: BigInt!
+  firstSeenTimestamp: BigInt!
+  lastUpdatedBlock: BigInt!
+  lastUpdatedTimestamp: BigInt!
+
+  positions: [VaultPosition!]! @derivedFrom(field: "vault")
+  deposits: [Deposit!]! @derivedFrom(field: "vault")
+  withdraws: [Withdraw!]! @derivedFrom(field: "vault")
+  shareTransfers: [ShareTransfer!]! @derivedFrom(field: "vault")
+  hourlySnapshots: [VaultHourlySnapshot!]! @derivedFrom(field: "vault")
+  dailySnapshots: [VaultDailySnapshot!]! @derivedFrom(field: "vault")
+}
+
+type Account @entity(immutable: false) {
+  "The account's address."
+  id: Bytes!
+  depositCount: Int!
+  withdrawCount: Int!
+  positions: [VaultPosition!]! @derivedFrom(field: "account")
+}
+
+"One account's stake in one vault. The id is the vault address followed by the account address."
+type VaultPosition @entity(immutable: false) {
+  id: Bytes!
+  vault: Vault!
+  account: Account!
+
+  "Current share balance, in share units."
+  shares: BigInt!
+
+  "Assets this account has deposited into this vault, in asset units."
+  cumulativeDepositedAssets: BigInt!
+  "Assets this account has withdrawn from this vault, in asset units."
+  cumulativeWithdrawnAssets: BigInt!
+  "Shares received by transfer rather than by minting."
+  sharesReceived: BigInt!
+  "Shares sent by transfer rather than by burning."
+  sharesSent: BigInt!
+
+  depositCount: Int!
+  withdrawCount: Int!
+
+  "False once the share balance returns to zero. The row is kept, so history survives an exit."
+  isOpen: Boolean!
+  openedBlock: BigInt!
+  openedTimestamp: BigInt!
+  lastUpdatedBlock: BigInt!
+  lastUpdatedTimestamp: BigInt!
+}
+
+"An ERC-4626 `Deposit`. The id is the transaction hash followed by the log index."
+type Deposit @entity(immutable: true) {
+  id: Bytes!
+  hash: Bytes!
+  logIndex: Int!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+
+  vault: Vault!
+  "Who called the vault."
+  sender: Account!
+  "Who the shares were minted to."
+  owner: Account!
+
+  assets: BigInt!
+  shares: BigInt!
+  "Assets per share implied by this event alone, decimal-adjusted."
+  sharePrice: BigDecimal!
+}
+
+"An ERC-4626 `Withdraw`. The id is the transaction hash followed by the log index."
+type Withdraw @entity(immutable: true) {
+  id: Bytes!
+  hash: Bytes!
+  logIndex: Int!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+
+  vault: Vault!
+  "Who called the vault."
+  sender: Account!
+  "Who the assets went to."
+  receiver: Account!
+  "Whose shares were burned."
+  owner: Account!
+
+  assets: BigInt!
+  shares: BigInt!
+  "Assets per share implied by this event alone, decimal-adjusted."
+  sharePrice: BigDecimal!
+}
+
+"""
+An ERC-20 `Transfer` of shares. Mints and burns are recorded too, so the share supply can be
+reconciled from this entity alone, but they are flagged: a vault's own deposit and withdraw events
+describe the same movement, and counting both would double the flow.
+"""
+type ShareTransfer @entity(immutable: true) {
+  id: Bytes!
+  hash: Bytes!
+  logIndex: Int!
+  blockNumber: BigInt!
+  timestamp: BigInt!
+
+  vault: Vault!
+  from: Account!
+  to: Account!
+  shares: BigInt!
+
+  "True when `from` is the zero address."
+  isMint: Boolean!
+  "True when `to` is the zero address."
+  isBurn: Boolean!
+}
+
+"The vault's state at the end of an hour. The id is the vault address followed by the hour index."
+type VaultHourlySnapshot @entity(immutable: false) {
+  id: Bytes!
+  vault: Vault!
+  "Unix timestamp divided by 3600."
+  hour: Int!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+
+  totalAssets: BigInt!
+  totalShares: BigInt!
+  sharePrice: BigDecimal!
+
+  hourlyDepositedAssets: BigInt!
+  hourlyWithdrawnAssets: BigInt!
+  hourlyDepositCount: Int!
+  hourlyWithdrawCount: Int!
+}
+
+"The vault's state at the end of a day. The id is the vault address followed by the day index."
+type VaultDailySnapshot @entity(immutable: false) {
+  id: Bytes!
+  vault: Vault!
+  "Unix timestamp divided by 86400."
+  day: Int!
+  timestamp: BigInt!
+  blockNumber: BigInt!
+
+  totalAssets: BigInt!
+  totalShares: BigInt!
+  sharePrice: BigDecimal!
+
+  dailyDepositedAssets: BigInt!
+  dailyWithdrawnAssets: BigInt!
+  dailyDepositCount: Int!
+  dailyWithdrawCount: Int!
 }

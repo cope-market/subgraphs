@@ -17,8 +17,15 @@ dataSources:
       language: wasm/assemblyscript
       file: ./src/vault.ts
       entities:
-        - Vault
+        - Account
+        - Deposit
+        - ShareTransfer
         - Token
+        - Vault
+        - VaultDailySnapshot
+        - VaultHourlySnapshot
+        - VaultPosition
+        - Withdraw
       abis:
         - name: ERC4626
           file: ./abis/ERC4626.json
