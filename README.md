@@ -68,10 +68,19 @@ npm run test           # matchstick unit tests
 npm run check          # all of the above, in order
 ```
 
-`check:handlers` exists because a handler that is exported but never wired fails silently: it
-compiles, it deploys, and the subgraph indexes with `hasIndexingErrors: false` while never seeing
-the event. Cope Market's `PositionClosed` shipped that way once and reported five open positions
-when the chain had already burned two of them.
+Two of those guards exist because the failures they catch are silent.
+
+`check:handlers` catches a handler that is exported but never wired. It compiles, it deploys, and
+the subgraph indexes with `hasIndexingErrors: false` while never seeing the event. Cope Market's
+`PositionClosed` shipped that way once and reported five open positions when the chain had already
+burned two of them.
+
+`check:standardized` catches anything specific to this protocol reaching the `erc4626-vault`
+schema, mappings or ABIs. The claim that it indexes any ERC-4626 vault is worth only as much as it
+is true, and it is the kind of claim that decays quietly — a field added in a hurry, a comment
+explaining a behaviour by naming our own vault, an ABI swapped for the one already on disk. None of
+that breaks a build. `config/` is exempt, because naming the vaults under index is what those files
+are for.
 
 Per workspace, add `-w erc4626-vault` or `-w cope-market`.
 

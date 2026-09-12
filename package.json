@@ -11,8 +11,9 @@
     "test": "npm run test --workspaces --if-present",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run codegen && npm run check:handlers && npm run build && npm run test",
-    "check:handlers": "node scripts/check-handlers.mjs"
+    "check": "npm run format:check && npm run codegen && npm run check:handlers && npm run check:standardized && npm run build && npm run test",
+    "check:handlers": "node scripts/check-handlers.mjs",
+    "check:standardized": "node scripts/check-standardized.mjs"
   },
   "devDependencies": {
     "@graphprotocol/graph-cli": "^0.98.1",

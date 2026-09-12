@@ -35,9 +35,10 @@ type Vault @entity(immutable: false) {
   """
   `totalAssets()` in asset units, as of `lastUpdatedBlock`.
 
-  This is not live. A vault's assets move with no log — yield accrues, and here traders win and
-  lose against the pool — and a subgraph only runs when a log arrives. Anything that needs the
-  figure to the block must read the contract; this is what it was when the vault last emitted.
+  This is not live. A vault's assets move with no log — yield accrues, and a vault that is
+  counterparty to something wins and loses on it — and a subgraph only runs when a log arrives.
+  Anything that needs the figure to the block must read the contract; this is what it was when the
+  vault last emitted.
   """
   totalAssets: BigInt!
   "`totalSupply()` of shares, in share units, as of `lastUpdatedBlock`."

@@ -87,7 +87,7 @@ export function getOrCreateVault(address: Address, block: ethereum.Block): Vault
 /// Re-reads `totalAssets()` and `totalSupply()` and recomputes the share price.
 ///
 /// Both are read rather than accumulated from events. A vault's assets move without emitting
-/// anything — yield accrues, and in Cope Market's case traders win and lose against the pool — so
+/// anything — yield accrues, and a vault that is counterparty to something wins and loses on it — so
 /// a running total kept from `Deposit` and `Withdraw` alone would drift away from the truth and
 /// never come back.
 export function refreshVault(vault: Vault, block: ethereum.Block): void {
