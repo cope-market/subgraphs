@@ -1,0 +1,18 @@
+{
+  "network": "base",
+  "note": "A genericity proof, not a full history. Both vaults predate this start block by millions of blocks, so cumulative flows and holder counts here count only what happened after it. Indexing either from deployment would take hours and prove nothing further: what is being demonstrated is that unmodified mappings index vaults belonging to a protocol this repository has never heard of.",
+  "vaults": [
+    {
+      "name": "MoonwellFlagshipUSDC",
+      "description": "MetaMorpho vault by Block Analitica and B.Protocol. 6-decimal USDC under 18-decimal shares — the same offset shape as Cope Market's, from an unrelated protocol.",
+      "address": "0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca",
+      "startBlock": 51150000
+    },
+    {
+      "name": "MoonwellFlagshipETH",
+      "description": "MetaMorpho vault. 18-decimal WETH under 18-decimal shares, so no decimal offset at all — the case a share price that assumes an offset gets wrong.",
+      "address": "0xa0E430870c4604CcfC7B38Ca7845B1FF653D0ff1",
+      "startBlock": 51150000
+    }
+  ]
+}

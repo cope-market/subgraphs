@@ -1,9 +1,5 @@
 import {Bytes, ethereum} from "@graphprotocol/graph-ts";
-import {
-  Deposit as DepositEvent,
-  Transfer,
-  Withdraw as WithdrawEvent,
-} from "../generated/Vault/ERC4626";
+import {Deposit as DepositEvent, Transfer, Withdraw as WithdrawEvent} from "./bindings";
 import {Deposit, ShareTransfer, Token, Vault, Withdraw} from "../generated/schema";
 import {BIGINT_ZERO, DEFAULT_DECIMALS, ZERO_ADDRESS} from "./constants";
 import {sharePriceOf} from "./decimals";

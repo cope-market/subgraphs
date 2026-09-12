@@ -4,10 +4,12 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "codegen": "graph codegen",
-    "build": "graph build --network arc-testnet",
+    "manifest": "node scripts/build-manifest.mjs",
+    "codegen": "node scripts/build-manifest.mjs ${NETWORK:-arc-testnet} && graph codegen",
+    "build": "node scripts/build-manifest.mjs ${NETWORK:-arc-testnet} && graph build",
     "test": "../scripts/matchstick.sh",
-    "deploy": "graph deploy erc-4626-vault-arc --network arc-testnet"
+    "deploy:arc": "NETWORK=arc-testnet npm run build && graph deploy erc-4626-vault-arc",
+    "deploy:base": "NETWORK=base npm run build && graph deploy erc-4626-vault-base"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.98.1",

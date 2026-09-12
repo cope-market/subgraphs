@@ -1,6 +1,5 @@
 import {Address, BigInt, Bytes, ethereum} from "@graphprotocol/graph-ts";
-import {ERC20} from "../generated/Vault/ERC20";
-import {ERC4626} from "../generated/Vault/ERC4626";
+import {ERC20, ERC4626} from "./bindings";
 import {Account, Token, Vault, VaultPosition} from "../generated/schema";
 import {
   BIGDECIMAL_ONE,

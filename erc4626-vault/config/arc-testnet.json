@@ -1,0 +1,11 @@
+{
+  "network": "arc-testnet",
+  "vaults": [
+    {
+      "name": "Vault",
+      "description": "Cope Market LiquidityVault. 6-decimal USDC asset under 18-decimal shares.",
+      "address": "0x0ffABC4e80125C5742D5ed04Cc1fD1b634Bc3C5d",
+      "startBlock": 61720923
+    }
+  ]
+}

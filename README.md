@@ -19,16 +19,41 @@ The product data that would break that rule lives in the second workspace instea
 
 ```
 erc4626-vault/
-  abis/ERC4626.json     the standard's events and views, hand-written — not our vault's ABI
-  networks.json         address and startBlock per network; the only vault-specific file
+  abis/ERC4626.json          the standard's events and views, hand-written — not our vault's ABI
+  config/<network>.json      which vaults to index; the only vault-specific files in the repo
+  subgraph.template.yaml     one data source, repeated per vault at build time
+  scripts/build-manifest.mjs renders subgraph.yaml and src/bindings.ts from the config
   schema.graphql
   src/vault.ts
   tests/
 cope-market/
   abis/SyntheticVault.json
   ...
-scripts/matchstick.sh   test runner; see "Running the tests" below
+scripts/matchstick.sh        test runner; see "Running the tests" below
 ```
+
+`erc4626-vault/subgraph.yaml` and `erc4626-vault/src/bindings.ts` are generated and are not
+committed. Edit the template and the config.
+
+### Pointing it at another vault
+
+Add a file to `config/`:
+
+```json
+{
+  "network": "base",
+  "vaults": [{"name": "MyVault", "address": "0x...", "startBlock": 51150000}]
+}
+```
+
+```bash
+NETWORK=base npm run build -w erc4626-vault
+```
+
+No mapping changes, and no schema changes. Several vaults in one config index side by side, because
+every handler reads `event.address` and `Vault` is keyed by it. graph-cli's own `networks.json`
+would not do: it rewrites data sources the manifest already declares, so the _number_ of vaults
+would still be fixed in code.
 
 ## Commands
 

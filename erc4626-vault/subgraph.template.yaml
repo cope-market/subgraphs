@@ -3,14 +3,19 @@ description: A standardized subgraph for any ERC-4626 tokenized vault.
 repository: https://github.com/cope-market/subgraphs
 schema:
   file: ./schema.graphql
+# Generated into subgraph.yaml by scripts/build-manifest.mjs. Edit this file, never subgraph.yaml.
+#
+# The vaults under index come from config/<network>.json. Adding a vault, or pointing the subgraph
+# at a different chain, is a configuration change and nothing more: no handler knows which vault it
+# is running against, because every one of them reads `event.address`.
 dataSources:
   - kind: ethereum
-    name: Vault
-    network: arc-testnet
+    name: {{name}}
+    network: {{network}}
     source:
       abi: ERC4626
-      address: "0x0ffABC4e80125C5742D5ed04Cc1fD1b634Bc3C5d"
-      startBlock: 61720923
+      address: "{{address}}"
+      startBlock: {{startBlock}}
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.9
@@ -32,9 +37,9 @@ dataSources:
         - name: ERC20
           file: ./abis/ERC20.json
       eventHandlers:
-        - event: Deposit(indexed address,indexed address,uint256,uint256)
+        - event: "Deposit(indexed address,indexed address,uint256,uint256)"
           handler: handleDeposit
-        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+        - event: "Withdraw(indexed address,indexed address,indexed address,uint256,uint256)"
           handler: handleWithdraw
-        - event: Transfer(indexed address,indexed address,uint256)
+        - event: "Transfer(indexed address,indexed address,uint256)"
           handler: handleTransfer

@@ -1,6 +1,6 @@
 import {Address, BigInt, ethereum} from "@graphprotocol/graph-ts";
 import {createMockedFunction, newMockEvent} from "matchstick-as/assembly/index";
-import {Deposit, Transfer, Withdraw} from "../generated/Vault/ERC4626";
+import {Deposit, Transfer, Withdraw} from "../src/bindings";
 
 export const VAULT = Address.fromString("0x0ffabc4e80125c5742d5ed04cc1fd1b634bc3c5d");
 export const ASSET = Address.fromString("0x3600000000000000000000000000000000000000");
