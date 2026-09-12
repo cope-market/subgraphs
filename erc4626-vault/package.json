@@ -7,7 +7,7 @@
     "codegen": "graph codegen",
     "build": "graph build --network arc-testnet",
     "test": "../scripts/matchstick.sh",
-    "deploy": "graph deploy erc4626-vault-arc --network arc-testnet"
+    "deploy": "graph deploy erc-4626-vault-arc --network arc-testnet"
   },
   "dependencies": {
     "@graphprotocol/graph-cli": "^0.98.1",

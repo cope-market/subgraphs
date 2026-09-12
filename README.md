@@ -85,3 +85,30 @@ The plain `npm audit` count is entirely `@graphprotocol/graph-cli`'s dependency 
 at our own ABIs and at Subgraph Studio, and the advisories are not reachable from that use. An
 `overrides` entry lifts `axios` off 0.21.4, which was the one worth moving; the rest have no fixed
 version that graph-cli accepts.
+
+## Deployed
+
+| Subgraph        | Studio slug          | Network       | Query endpoint                                                              |
+| --------------- | -------------------- | ------------- | --------------------------------------------------------------------------- |
+| `erc4626-vault` | `erc-4626-vault-arc` | `arc-testnet` | `https://api.studio.thegraph.com/query/101383/erc-4626-vault-arc/<version>` |
+| `cope-market`   | `cope-market-arc`    | `arc-testnet` | not yet deployed                                                            |
+
+Studio inserts a hyphen into the numeral: the slug is `erc-4626-vault-arc`, not `erc4626-vault-arc`.
+Deploying under the name you typed into the form returns `Subgraph not found`.
+
+Indexing `LiquidityVault` at `0x0ffABC4e80125C5742D5ed04Cc1fD1b634Bc3C5d` from block 61720923.
+
+### `totalAssets` is as of `lastUpdatedBlock`, not live
+
+The subgraph agrees with the contract exactly at every block it indexed, and drifts from it in
+between. Measured against the live deployment:
+
+| Source                                                  | `totalAssets` |
+| ------------------------------------------------------- | ------------- |
+| Subgraph                                                | `30000000`    |
+| `totalAssets()` at block 61720957, the vault's last log | `30000000`    |
+| `totalAssets()` at chain head                           | `30016928`    |
+
+The 16,928 is trading P&L that accrued into the pool without the vault emitting anything. Handlers
+run on logs, so a subgraph cannot see it until the next deposit, withdrawal or transfer. Anything
+that needs TVL to the block reads the contract; anything charting history reads the snapshots.

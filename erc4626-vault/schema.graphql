@@ -32,11 +32,20 @@ type Vault @entity(immutable: false) {
   "The ERC-20 the vault accounts in, from `asset()`."
   asset: Token!
 
-  "`totalAssets()`, in asset units."
+  """
+  `totalAssets()` in asset units, as of `lastUpdatedBlock`.
+
+  This is not live. A vault's assets move with no log — yield accrues, and here traders win and
+  lose against the pool — and a subgraph only runs when a log arrives. Anything that needs the
+  figure to the block must read the contract; this is what it was when the vault last emitted.
+  """
   totalAssets: BigInt!
-  "`totalSupply()` of shares, in share units."
+  "`totalSupply()` of shares, in share units, as of `lastUpdatedBlock`."
   totalShares: BigInt!
-  "Assets per share, decimal-adjusted on both sides. One when the vault is empty."
+  """
+  Assets per share, decimal-adjusted on both sides, as of `lastUpdatedBlock`. One when the vault
+  is empty.
+  """
   sharePrice: BigDecimal!
 
   "Assets ever deposited, in asset units. Never decreases."
