@@ -1,0 +1,19 @@
+{
+  "name": "@cope-market/erc4626-vault-subgraph",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build --network arc-testnet",
+    "test": "../scripts/matchstick.sh",
+    "deploy": "graph deploy erc4626-vault-arc --network arc-testnet"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "^0.98.1",
+    "@graphprotocol/graph-ts": "^0.38.2"
+  },
+  "devDependencies": {
+    "matchstick-as": "^0.6.0"
+  }
+}

@@ -1,0 +1,10 @@
+# Scaffold schema. Workstream step 5.7 replaces this with positions, copies and realised P&L.
+
+type Position @entity(immutable: false) {
+  "The ERC-721 token id, as bytes."
+  id: Bytes!
+  "The Pyth feed the position is priced against."
+  feedId: Bytes!
+  "True for a long, false for a short."
+  isLong: Boolean!
+}

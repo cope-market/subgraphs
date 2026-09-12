@@ -1,0 +1,8 @@
+{
+  "arc-testnet": {
+    "SyntheticVault": {
+      "address": "0x2c720283A8Bbb5CC5b13C0C4Bcf2300826286c47",
+      "startBlock": 61720923
+    }
+  }
+}

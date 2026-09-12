@@ -1,0 +1,33 @@
+specVersion: 1.3.0
+description: A standardized subgraph for any ERC-4626 tokenized vault.
+repository: https://github.com/cope-market/subgraphs
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: Vault
+    network: arc-testnet
+    source:
+      abi: ERC4626
+      address: "0x0ffABC4e80125C5742D5ed04Cc1fD1b634Bc3C5d"
+      startBlock: 61720923
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/vault.ts
+      entities:
+        - Vault
+        - Token
+      abis:
+        - name: ERC4626
+          file: ./abis/ERC4626.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+      eventHandlers:
+        - event: Deposit(indexed address,indexed address,uint256,uint256)
+          handler: handleDeposit
+        - event: Withdraw(indexed address,indexed address,indexed address,uint256,uint256)
+          handler: handleWithdraw
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer

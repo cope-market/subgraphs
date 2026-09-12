@@ -1,0 +1,8 @@
+# Scaffold schema. Workstream step 5.2 replaces this with the standardized entity set.
+
+type Vault @entity(immutable: false) {
+  "The vault's address."
+  id: Bytes!
+  "The ERC-20 the vault accounts in, as reported by `asset()`."
+  asset: Bytes!
+}

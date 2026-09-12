@@ -1,0 +1,25 @@
+{
+  "name": "@cope-market/subgraphs",
+  "private": true,
+  "workspaces": [
+    "erc4626-vault",
+    "cope-market"
+  ],
+  "scripts": {
+    "codegen": "npm run codegen --workspaces --if-present",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "npm run format:check && npm run codegen && npm run build && npm run test"
+  },
+  "devDependencies": {
+    "@graphprotocol/graph-cli": "^0.98.1",
+    "@graphprotocol/graph-ts": "^0.38.2",
+    "matchstick-as": "^0.6.0",
+    "prettier": "^3.9.6"
+  },
+  "overrides": {
+    "axios": "^1.13.1"
+  }
+}

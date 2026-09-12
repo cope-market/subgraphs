@@ -1,0 +1,27 @@
+specVersion: 1.3.0
+description: Cope Market positions, copy lineage and realised P&L.
+repository: https://github.com/cope-market/subgraphs
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: SyntheticVault
+    network: arc-testnet
+    source:
+      abi: SyntheticVault
+      address: "0x2c720283A8Bbb5CC5b13C0C4Bcf2300826286c47"
+      startBlock: 61720923
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.9
+      language: wasm/assemblyscript
+      file: ./src/synthetic-vault.ts
+      entities:
+        - Position
+      abis:
+        - name: SyntheticVault
+          file: ./abis/SyntheticVault.json
+      eventHandlers:
+        - event: PositionOpened(indexed uint256,indexed address,indexed
+            bytes32,bool,uint128,uint256,uint256,uint256)
+          handler: handlePositionOpened
